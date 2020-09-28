@@ -125,6 +125,8 @@ class ForwardTacotron(nn.Module):
                             proj_channels=[postnet_dims, n_mels],
                             num_highways=highways)
         self.dropout = dropout
+        self.prenet_dims = prenet_dims
+        self.x_proj = nn.Linear(3 * prenet_dims, prenet_dims)
         self.post_proj = nn.Linear(2 * postnet_dims, n_mels, bias=False)
 
     def forward(self, x, mel, dur):
@@ -136,29 +138,21 @@ class ForwardTacotron(nn.Module):
         dur_hat = self.dur_pred(x)
         dur_hat = dur_hat.squeeze()
 
-        res_in = torch.cat([x, dur.unsqueeze(-1)], dim=-1)
-        dur_res = self.res_pred(res_in).squeeze()
-        dur_res_sum = torch.sum(dur_res, dim=1)
-        dur_res = dur_res - dur_res_sum[:, None] / dur_res.size(1)
-
-        #dur_res = torch.zeros(dur.shape, device=x.device).float()
-        #dur_res[:, 0:-1:2] += dur_res_pred[:, 0:-1:2]
-        #dur_res[:, 1:-1:2] -= dur_res_pred[:, 0:-2:2]
-        #dur_res[:, 1:-1:2] += dur_res_pred[:, 1:-1:2]
-        #dur_res[:, 2:-1:2] -= dur_res_pred[:, 1:-2:2]
-        dur_new = dur + dur_res
-
-        if random.random() < 0.05:
-            print(f'\ndur res {dur_res[0]}')
-            print(f'dur {dur[0]}')
-            print(f'dur new {dur_new[0]}')
-            print(f'sum res {torch.sum(dur_res)}')
-
-
+        dur_new = dur
         x = x.transpose(1, 2)
         x = self.prenet(x)
         x = self.lr(x, dur_new)
-        x, _ = self.lstm(x)
+
+        bs = x.size(0)
+        start_x = torch.zeros((bs, 1, self.prenet_dims), device=x.device)
+        end_x = torch.zeros((bs, 1, self.prenet_dims), device=x.device)
+
+        x_right = self.lr(torch.cat([x[:, 1:, :], end_x], dim=1))
+        x_left = self.lr(torch.cat([start_x, x[:, :-1, :]], dim=1))
+        x_concat = torch.cat([x_left, x, x_right], dim=-1)
+        x_proj = self.x_proj(x_concat)
+
+        x, _ = self.lstm(x_proj)
         x = F.dropout(x,
                       p=self.dropout,
                       training=self.training)
