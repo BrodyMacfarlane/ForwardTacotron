@@ -138,17 +138,16 @@ class ForwardTacotron(nn.Module):
         dur_hat = self.dur_pred(x)
         dur_hat = dur_hat.squeeze()
 
-        dur_new = dur
         x = x.transpose(1, 2)
         x = self.prenet(x)
-        x = self.lr(x, dur_new)
 
         bs = x.size(0)
         start_x = torch.zeros((bs, 1, self.prenet_dims), device=x.device)
         end_x = torch.zeros((bs, 1, self.prenet_dims), device=x.device)
 
-        x_right = self.lr(torch.cat([x[:, 1:, :], end_x], dim=1))
-        x_left = self.lr(torch.cat([start_x, x[:, :-1, :]], dim=1))
+        x = self.lr(x, dur)
+        x_right = self.lr(torch.cat([x[:, 1:, :], end_x], dim=1), dur)
+        x_left = self.lr(torch.cat([start_x, x[:, :-1, :]], dim=1), dur)
         x_concat = torch.cat([x_left, x, x_right], dim=-1)
         x_proj = self.x_proj(x_concat)
 
@@ -165,7 +164,7 @@ class ForwardTacotron(nn.Module):
 
         x_post = self.pad(x_post, mel.size(2))
         x = self.pad(x, mel.size(2))
-        return x, x_post, dur_hat, dur_new.detach()
+        return x, x_post, dur_hat, dur
 
     def generate(self, x, alpha=1.0):
         self.eval()
@@ -184,8 +183,8 @@ class ForwardTacotron(nn.Module):
         start_x = torch.zeros((bs, 1, self.prenet_dims), device=x.device)
         end_x = torch.zeros((bs, 1, self.prenet_dims), device=x.device)
 
-        x_right = self.lr(torch.cat([x[:, 1:, :], end_x], dim=1))
-        x_left = self.lr(torch.cat([start_x, x[:, :-1, :]], dim=1))
+        x_right = self.lr(torch.cat([x[:, 1:, :], end_x], dim=1), dur)
+        x_left = self.lr(torch.cat([start_x, x[:, :-1, :]], dim=1), dur)
         x_concat = torch.cat([x_left, x, x_right], dim=-1)
         x_proj = self.x_proj(x_concat)
 
