@@ -158,7 +158,7 @@ class ForwardTacotron(nn.Module):
         att, _ = self.att_rnn(x)
         att = self.att_proj(att)
         att = torch.softmax(att, dim=-1)
-        x_sum = x_left * att[:, :, 0] + x * att[:, :, 1] + x_right * att[:, :, 2]
+        x_sum = x_left * att[:, :, 0:1] + x * att[:, :, 1:2] + x_right * att[:, :, 2:3]
         x, _ = self.lstm(x_sum)
         x = F.dropout(x,
                       p=self.dropout,
