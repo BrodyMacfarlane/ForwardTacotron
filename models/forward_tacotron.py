@@ -155,7 +155,7 @@ class ForwardTacotron(nn.Module):
         x_d = x.detach()
         x_right = self.lr(torch.cat([x_d[:, 1:, :], end_x], dim=1), dur)
         x_left = self.lr(torch.cat([start_x, x_d[:, :-1, :]], dim=1), dur)
-        att, _ = self.att_rnn(mel.transpose(1, 2))[:, x.size(1):, :]
+        att, _ = self.att_rnn(mel.transpose(1, 2))[:, :x.size(1):, :]
         att = self.att_proj(att)
         att = torch.softmax(att, dim=-1)
         if random.random() < 0.05:
