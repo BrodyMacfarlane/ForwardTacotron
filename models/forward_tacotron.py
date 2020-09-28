@@ -136,7 +136,7 @@ class ForwardTacotron(nn.Module):
         dur_hat = self.dur_pred(x)
         dur_hat = dur_hat.squeeze()
 
-        dur_res = self.res_pred(x)
+        dur_res = self.res_pred(x).squeeze()
 
         dur[:, 0::2] += dur_res[:, ::2]
         dur[:, 1::2] -= dur_res[:, ::2]
