@@ -128,7 +128,7 @@ class ForwardTacotron(nn.Module):
         self.prenet_dims = 512
         self.x_proj = nn.Linear(3 * self.prenet_dims, self.prenet_dims)
         self.att_proj = nn.Linear(256, 3)
-        self.att_rnn = nn.GRU(self.prenet_dims,
+        self.att_rnn = nn.GRU(80,
                               128,
                               batch_first=True,
                               bidirectional=True)
@@ -155,7 +155,7 @@ class ForwardTacotron(nn.Module):
         x_d = x.detach()
         x_right = self.lr(torch.cat([x_d[:, 1:, :], end_x], dim=1), dur)
         x_left = self.lr(torch.cat([start_x, x_d[:, :-1, :]], dim=1), dur)
-        att, _ = self.att_rnn(x)
+        att, _ = self.att_rnn(mel.transpose(1, 2))
         att = self.att_proj(att)
         att = torch.softmax(att, dim=-1)
         if random.random() < 0.05:
