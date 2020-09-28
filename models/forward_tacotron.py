@@ -167,7 +167,7 @@ class ForwardTacotron(nn.Module):
 
         x_post = self.pad(x_post, mel.size(2))
         x = self.pad(x, mel.size(2))
-        return x, x_post, dur_hat, dur_new
+        return x, x_post, dur_hat, dur_new.detach()
 
     def generate(self, x, alpha=1.0):
         self.eval()
