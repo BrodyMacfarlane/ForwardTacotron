@@ -140,8 +140,8 @@ class ForwardTacotron(nn.Module):
         dur_res = torch.zeros(dur.shape, device=x.device).float()
         dur_res[:, 0:-2:2] += dur_res_pred[:, 0:-2:2]
         dur_res[:, 1:-1:2] -= dur_res_pred[:, 0:-2:2]
-        dur_res[:, 1:-2:2] += dur_res_pred[:, 1:-4:2]
-        dur_res[:, 2:-1:2] -= dur_res_pred[:, 1:-4:2]
+        dur_res[:, 1:-2:2] += dur_res_pred[:, 1:-3:2]
+        dur_res[:, 2:-1:2] -= dur_res_pred[:, 1:-3:2]
         dur_new = dur + dur_res
 
         if random.random() < 0.05:
