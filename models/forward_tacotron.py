@@ -155,10 +155,15 @@ class ForwardTacotron(nn.Module):
         x_d = x.detach()
         x_right = self.lr(torch.cat([x_d[:, 1:, :], end_x], dim=1), dur)
         x_left = self.lr(torch.cat([start_x, x_d[:, :-1, :]], dim=1), dur)
-
         att, _ = self.att_rnn(x)
         att = self.att_proj(att)
         att = torch.softmax(att, dim=-1)
+        if random.random() < 0.05:
+            print()
+            print(att[0, :, 0])
+            print(att[0, :, 1])
+            print(att[0, :, 2])
+
         x_sum = x_left * att[:, :, 0:1] + x * att[:, :, 1:2] + x_right * att[:, :, 2:3]
         x, _ = self.lstm(x_sum)
         x = F.dropout(x,
