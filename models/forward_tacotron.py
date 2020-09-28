@@ -136,7 +136,7 @@ class ForwardTacotron(nn.Module):
         dur_hat = self.dur_pred(x)
         dur_hat = dur_hat.squeeze()
 
-        res_in = torch.cat([x, dur_hat], dim=-1)
+        res_in = torch.cat([x, dur.unsqueeze(-1)], dim=-1)
         dur_res_pred = self.res_pred(res_in).squeeze()
         #dur_res = torch.zeros(dur.shape, device=x.device).float()
         #dur_res[:, 0:-1:2] += dur_res_pred[:, 0:-1:2]
