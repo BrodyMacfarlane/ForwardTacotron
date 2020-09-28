@@ -202,7 +202,6 @@ class ForwardTacotron(nn.Module):
         x_sum = x_left * att[:, :, 0:1] + x * att[:, :, 1:2] + x_right * att[:, :, 2:3]
         x, _ = self.lstm(x_sum)
 
-        x, _ = self.lstm(x)
         x = F.dropout(x,
                       p=self.dropout,
                       training=self.training)
