@@ -134,9 +134,9 @@ class ForwardTacotron(nn.Module):
         x = x.transpose(1, 2)
         x = self.prenet(x)
         x = self.lr(x, dur)
-        x, _ = self.lstm(x)
         for i in range(x.size(0)):
             x[i, mel_lens[i]:, :] = 0
+        x, _ = self.lstm(x)
 
         x = F.dropout(x,
                       p=self.dropout,
