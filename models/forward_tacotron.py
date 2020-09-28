@@ -125,7 +125,7 @@ class ForwardTacotron(nn.Module):
                             proj_channels=[postnet_dims, n_mels],
                             num_highways=highways)
         self.dropout = dropout
-        self.prenet_dims = prenet_dims
+        self.prenet_dims = 2*prenet_dims
         self.x_proj = nn.Linear(3 * prenet_dims, prenet_dims)
         self.post_proj = nn.Linear(2 * postnet_dims, n_mels, bias=False)
 
@@ -179,6 +179,18 @@ class ForwardTacotron(nn.Module):
         x = x.transpose(1, 2)
         x = self.prenet(x)
         x = self.lr(x, dur)
+
+        bs = x.size(0)
+        start_x = torch.zeros((bs, 1, self.prenet_dims), device=x.device)
+        end_x = torch.zeros((bs, 1, self.prenet_dims), device=x.device)
+
+        x_right = self.lr(torch.cat([x[:, 1:, :], end_x], dim=1))
+        x_left = self.lr(torch.cat([start_x, x[:, :-1, :]], dim=1))
+        x_concat = torch.cat([x_left, x, x_right], dim=-1)
+        x_proj = self.x_proj(x_concat)
+
+        x, _ = self.lstm(x_proj)
+
         x, _ = self.lstm(x)
         x = F.dropout(x,
                       p=self.dropout,
