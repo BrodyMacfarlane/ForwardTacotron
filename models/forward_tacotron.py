@@ -126,7 +126,7 @@ class ForwardTacotron(nn.Module):
                             num_highways=highways)
         self.dropout = dropout
         self.prenet_dims = 512
-        self.x_proj = nn.Linear(3 * prenet_dims, prenet_dims)
+        self.x_proj = nn.Linear(3 * self.prenet_dims, prenet_dims)
         self.post_proj = nn.Linear(2 * postnet_dims, n_mels, bias=False)
 
     def forward(self, x, mel, dur):
@@ -149,6 +149,7 @@ class ForwardTacotron(nn.Module):
         x_right = self.lr(torch.cat([x[:, 1:, :], end_x], dim=1), dur)
         x_left = self.lr(torch.cat([start_x, x[:, :-1, :]], dim=1), dur)
         x_concat = torch.cat([x_left, x, x_right], dim=-1)
+
         x_proj = self.x_proj(x_concat)
 
         x, _ = self.lstm(x_proj)
