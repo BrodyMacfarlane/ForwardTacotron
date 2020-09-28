@@ -93,7 +93,7 @@ class ForwardTrainer:
 
                 self.writer.add_scalar('Mel_Loss/train', m1_loss + m2_loss, model.get_step())
                 self.writer.add_scalar('Duration_Loss/train', dur_loss, model.get_step())
-                self.writer.add_scalar('Duration_Res_Sum/train', torch.sum(dur_new), model.get_step())
+                self.writer.add_scalar('Duration_Res_Avg/train', torch.mean(torch.abs(dur_new - dur)), model.get_step())
                 self.writer.add_scalar('Params/batch_size', session.bs, model.get_step())
                 self.writer.add_scalar('Params/learning_rate', session.lr, model.get_step())
 
