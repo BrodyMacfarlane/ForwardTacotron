@@ -148,6 +148,7 @@ class ForwardTacotron(nn.Module):
             print(f'\ndur res {dur_res[0]}')
             print(f'dur {dur[0]}')
             print(f'dur new {dur_new[0]}')
+            print(f'sum res {torch.sum(dur_res)}')
 
 
         x = x.transpose(1, 2)
