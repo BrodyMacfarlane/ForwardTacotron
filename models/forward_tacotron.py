@@ -126,7 +126,7 @@ class ForwardTacotron(nn.Module):
                             num_highways=highways)
         self.dropout = dropout
         self.prenet_dims = 512
-        self.x_proj = nn.Linear(3 * self.prenet_dims, prenet_dims)
+        self.x_proj = nn.Linear(3 * self.prenet_dims, self.prenet_dims)
         self.post_proj = nn.Linear(2 * postnet_dims, n_mels, bias=False)
 
     def forward(self, x, mel, dur):
