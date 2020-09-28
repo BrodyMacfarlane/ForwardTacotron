@@ -139,9 +139,9 @@ class ForwardTacotron(nn.Module):
         dur_res = self.res_pred(x).squeeze()
 
         dur[:, 0::2] += dur_res[:, ::2]
-        dur[:, 1::2] -= dur_res[:, ::2]
+        dur[:, 1::2] -= dur_res[:, :-1:2]
         dur[:, 1::2] += dur_res[:, 1::2]
-        dur[:, 2::2] -= dur_res[:, 1::2]
+        dur[:, 2::2] -= dur_res[:, 1:-1:2]
 
         if random.random() < 0.05:
             print(f'dur res {dur_res[0]}')
