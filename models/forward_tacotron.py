@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import Union
-
+import random
 import numpy as np
 
 import torch.nn as nn
@@ -127,19 +127,26 @@ class ForwardTacotron(nn.Module):
         self.dropout = dropout
         self.post_proj = nn.Linear(2 * postnet_dims, n_mels, bias=False)
 
-    def forward(self, x, mel, dur):
+    def forward(self, x, mel, dur_in):
         if self.training:
             self.step += 1
 
+        dur = dur_in
         x = self.embedding(x)
         dur_hat = self.dur_pred(x)
         dur_hat = dur_hat.squeeze()
 
         dur_res = self.res_pred(x)
+
         dur[:, 0::2] += dur_res[:, ::2]
         dur[:, 1::2] -= dur_res[:, ::2]
-        print(f'dur {dur[0]}')
-        print(f'dur res {dur_res[0]}')
+        dur[:, 1::2] += dur_res[:, 1::2]
+        dur[:, 2::2] -= dur_res[:, 1::2]
+
+        if random.random() < 0.05:
+            print(f'dur res {dur_res[0]}')
+            print(f'dur {dur_in[0]}')
+            print(f'dur new {dur[0]}')
 
         x = x.transpose(1, 2)
         x = self.prenet(x)
