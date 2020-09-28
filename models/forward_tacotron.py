@@ -104,6 +104,10 @@ class ForwardTacotron(nn.Module):
                                           conv_dims=durpred_conv_dims,
                                           rnn_dims=durpred_rnn_dims,
                                           dropout=durpred_dropout)
+        self.res_pred = DurationPredictor(embed_dims,
+                                          conv_dims=durpred_conv_dims,
+                                          rnn_dims=durpred_rnn_dims,
+                                          dropout=durpred_dropout)
         self.prenet = CBHG(K=prenet_k,
                            in_channels=embed_dims,
                            channels=prenet_dims,
@@ -130,6 +134,12 @@ class ForwardTacotron(nn.Module):
         x = self.embedding(x)
         dur_hat = self.dur_pred(x)
         dur_hat = dur_hat.squeeze()
+
+        dur_res = self.res_pred(x)
+        dur[:, 0::2] += dur_res[:, ::2]
+        dur[:, 1::2] -= dur_res[:, ::2]
+        print(f'dur {dur[0]}')
+        print(f'dur res {dur_res[0]}')
 
         x = x.transpose(1, 2)
         x = self.prenet(x)
