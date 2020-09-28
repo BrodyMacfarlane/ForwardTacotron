@@ -104,9 +104,9 @@ class ForwardTacotron(nn.Module):
                                           conv_dims=durpred_conv_dims,
                                           rnn_dims=durpred_rnn_dims,
                                           dropout=durpred_dropout)
-        self.res_pred = DurationPredictor(embed_dims,
+        self.res_pred = DurationPredictor(embed_dims + 1,
                                           conv_dims=durpred_conv_dims,
-                                          rnn_dims=durpred_rnn_dims,
+                                          rnn_dims=256,
                                           dropout=durpred_dropout)
         self.prenet = CBHG(K=prenet_k,
                            in_channels=embed_dims,
@@ -136,7 +136,8 @@ class ForwardTacotron(nn.Module):
         dur_hat = self.dur_pred(x)
         dur_hat = dur_hat.squeeze()
 
-        dur_res_pred = self.res_pred(x).squeeze()
+        res_in = torch.cat([x, dur_hat], dim=-1)
+        dur_res_pred = self.res_pred(res_in).squeeze()
         #dur_res = torch.zeros(dur.shape, device=x.device).float()
         #dur_res[:, 0:-1:2] += dur_res_pred[:, 0:-1:2]
         #dur_res[:, 1:-1:2] -= dur_res_pred[:, 0:-2:2]
