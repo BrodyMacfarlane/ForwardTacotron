@@ -127,6 +127,11 @@ class ForwardTacotron(nn.Module):
         self.dropout = dropout
         self.prenet_dims = 512
         self.x_proj = nn.Linear(3 * self.prenet_dims, self.prenet_dims)
+        self.att_rnn = nn.GRU(self.prenet_dims,
+                              3,
+                              batch_first=True,
+                              bidirectional=True)
+
         self.post_proj = nn.Linear(2 * postnet_dims, n_mels, bias=False)
 
     def forward(self, x, mel, dur):
@@ -148,11 +153,11 @@ class ForwardTacotron(nn.Module):
         x = self.lr(x, dur)
         x_right = self.lr(torch.cat([x[:, 1:, :], end_x], dim=1), dur)
         x_left = self.lr(torch.cat([start_x, x[:, :-1, :]], dim=1), dur)
-        x_concat = torch.cat([x_left, x, x_right], dim=-1)
 
-        x_proj = self.x_proj(x_concat)
-
-        x, _ = self.lstm(x_proj)
+        att = self.att_rnn(x)
+        att = torch.softmax(att, dim=-1)
+        x_sum = x_left * att[:, :, 0] + x * att[:, :, 1] + x_right * att[:, :, 2]
+        x, _ = self.lstm(x_sum)
         x = F.dropout(x,
                       p=self.dropout,
                       training=self.training)
@@ -178,18 +183,19 @@ class ForwardTacotron(nn.Module):
 
         x = x.transpose(1, 2)
         x = self.prenet(x)
-        x = self.lr(x, dur)
 
         bs = x.size(0)
         start_x = torch.zeros((bs, 1, self.prenet_dims), device=x.device)
         end_x = torch.zeros((bs, 1, self.prenet_dims), device=x.device)
 
+        x = self.lr(x, dur)
         x_right = self.lr(torch.cat([x[:, 1:, :], end_x], dim=1), dur)
         x_left = self.lr(torch.cat([start_x, x[:, :-1, :]], dim=1), dur)
-        x_concat = torch.cat([x_left, x, x_right], dim=-1)
-        x_proj = self.x_proj(x_concat)
 
-        x, _ = self.lstm(x_proj)
+        att = self.att_rnn(x)
+        att = torch.softmax(att, dim=-1)
+        x_sum = x_left * att[:, :, 0] + x * att[:, :, 1] + x_right * att[:, :, 2]
+        x, _ = self.lstm(x_sum)
 
         x, _ = self.lstm(x)
         x = F.dropout(x,
