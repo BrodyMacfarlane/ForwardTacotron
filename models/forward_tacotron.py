@@ -127,7 +127,7 @@ class ForwardTacotron(nn.Module):
         self.dropout = dropout
         self.prenet_dims = 512
         self.x_proj = nn.Linear(3 * self.prenet_dims, self.prenet_dims)
-        self.att_proj = nn.Linear(128, 3)
+        self.att_proj = nn.Linear(256, 3)
         self.att_rnn = nn.GRU(self.prenet_dims,
                               128,
                               batch_first=True,
