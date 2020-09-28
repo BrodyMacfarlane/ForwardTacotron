@@ -127,30 +127,32 @@ class ForwardTacotron(nn.Module):
         self.dropout = dropout
         self.post_proj = nn.Linear(2 * postnet_dims, n_mels, bias=False)
 
-    def forward(self, x, mel, dur_in):
+    def forward(self, x, mel, dur):
         if self.training:
             self.step += 1
 
-        dur = dur_in
         x = self.embedding(x)
+
         dur_hat = self.dur_pred(x)
         dur_hat = dur_hat.squeeze()
 
-        dur_res = self.res_pred(x).squeeze()
-
-        dur[:, 0::2] += dur_res[:, ::2]
-        dur[:, 1::2] -= dur_res[:, :-1:2]
-        dur[:, 1::2] += dur_res[:, 1::2]
-        dur[:, 2::2] -= dur_res[:, 1:-1:2]
+        dur_res_pred = self.res_pred(x).squeeze()
+        dur_res = torch.zeros(dur.shape, device=x.device).float()
+        dur_res[:, 0::2] += dur_res_pred[:, ::2]
+        dur_res[:, 1::2] -= dur_res_pred[:, :-1:2]
+        dur_res[:, 1::2] += dur_res_pred[:, 1::2]
+        dur_res[:, 2::2] -= dur_res_pred[:, 1:-1:2]
+        dur_new = dur + dur_res
 
         if random.random() < 0.05:
-            print(f'dur res {dur_res[0]}')
-            print(f'dur {dur_in[0]}')
-            print(f'dur new {dur[0]}')
+            print(f'\ndur res {dur_res[0]}')
+            print(f'dur {dur[0]}')
+            print(f'dur new {dur_new[0]}')
+
 
         x = x.transpose(1, 2)
         x = self.prenet(x)
-        x = self.lr(x, dur)
+        x = self.lr(x, dur_new)
         x, _ = self.lstm(x)
         x = F.dropout(x,
                       p=self.dropout,
