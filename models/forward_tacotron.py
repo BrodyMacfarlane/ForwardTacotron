@@ -166,10 +166,8 @@ class ForwardTacotron(nn.Module):
 
         x = x.transpose(1, 2)
         x = self.prenet(x)
-        print(f'x shape {x.shape}')
-        print(f'p shape {pitch_proj.shape}')
+
         x = torch.cat([x, pitch_proj], dim=-1)
-        print(f'x shape {x.shape}')
 
         x = self.lr(x, dur)
 
