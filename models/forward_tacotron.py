@@ -137,7 +137,7 @@ class ForwardTacotron(nn.Module):
                            channels=prenet_dims,
                            proj_channels=[prenet_dims, embed_dims],
                            num_highways=highways)
-        self.lstm = nn.LSTM(2 * prenet_dims,
+        self.lstm = nn.LSTM(2 * prenet_dims + 64,
                             rnn_dim,
                             batch_first=True,
                             bidirectional=True)
@@ -150,7 +150,7 @@ class ForwardTacotron(nn.Module):
                             num_highways=highways)
         self.dropout = dropout
         self.post_proj = nn.Linear(2 * postnet_dims, n_mels, bias=False)
-        self.pitch_proj = nn.Conv1d(1, 2*prenet_dims, kernel_size=3, padding=1)
+        self.pitch_proj = nn.Conv1d(1, 64, kernel_size=3, padding=1)
 
     def forward(self, x, mel, dur, mel_lens, pitch):
         if self.training:
@@ -166,7 +166,10 @@ class ForwardTacotron(nn.Module):
 
         x = x.transpose(1, 2)
         x = self.prenet(x)
-        x = x + pitch_proj
+        print(f'x shape {x.shape}')
+        print(f'p shape {pitch_proj.shape}')
+        x = torch.cat([x, pitch_proj], dim=-1)
+        print(f'x shape {x.shape}')
 
         x = self.lr(x, dur)
 
@@ -203,7 +206,7 @@ class ForwardTacotron(nn.Module):
 
         x = x.transpose(1, 2)
         x = self.prenet(x)
-        x = x + pitch_hat_proj
+        x = torch.cat([x, pitch_hat_proj], dim=-1)
 
         x = self.lr(x, dur)
         x, _ = self.lstm(x)
