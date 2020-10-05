@@ -166,7 +166,7 @@ class ForwardTacotron(nn.Module):
         pitch_proj = pitch_proj.transpose(1, 2)
 
         for i in range(x.size(0)):
-            x[i, mel_lens[i]:, :] = x[i, mel_lens[i]:, :] + pitch_proj[i, mel_lens[i], :]
+            x[i, :mel_lens[i], :] = x[i, :mel_lens[i], :] + pitch_proj[i, :mel_lens[i], :]
             x[i, mel_lens[i]:, :] = 0
         x, _ = self.lstm(x)
 
