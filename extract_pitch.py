@@ -59,7 +59,8 @@ if __name__ == '__main__':
         #    pitch_char[idx] = np.mean(values) if len(values) > 0 else 0.0
         #print(f'{item_id} {pitch_char}')
         #print(f'{item_id} {text_dict[item_id]} {dur} {pitch_char}')
-        pitch = pitch[np.where(pitch < MAX_FREQ)[0]]
+        #pitch = pitch[np.where(pitch < MAX_FREQ)[0]]
+        print(f'mel len {mel_len} pitch shape {pitch.shape}')
         phoneme_pitches.append((item_id, pitch))
         bar = progbar(prog_idx, len(all_data))
         message = f'{bar} {prog_idx}/{len(all_data)} '

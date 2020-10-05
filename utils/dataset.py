@@ -235,10 +235,10 @@ def collate_tts(batch, r):
     mel = torch.tensor(mel)
     # additional durations for forward
     if len(batch[0]) > 4:
-        dur = [pad1d(x[4][:max_x_len], max_x_len) for x in batch]
+        dur = [pad1d(x[4], max_x_len) for x in batch]
         dur = np.stack(dur)
         dur = torch.tensor(dur).float()
-        pitch = [pad1d(x[5][:max_x_len], max_x_len) for x in batch]
+        pitch = [pad1d(x[5], max_spec_len) for x in batch]
         pitch = np.stack(pitch)
         pitch = torch.tensor(pitch).float()
         return chars, mel, ids, x_lens, mel_lens, dur, pitch

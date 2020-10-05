@@ -124,7 +124,7 @@ class ForwardTacotron(nn.Module):
                                           conv_dims=durpred_conv_dims,
                                           rnn_dims=durpred_rnn_dims,
                                           dropout=durpred_dropout)
-        self.pitch_pred = PitchPredictor(prenet_dims,
+        self.pitch_pred = PitchPredictor(2*prenet_dims,
                                          conv_dims=256,
                                          rnn_dims=128,
                                          dropout=0.5)
@@ -164,9 +164,9 @@ class ForwardTacotron(nn.Module):
         pitch = pitch.unsqueeze(1)
         pitch_proj = self.pitch_proj(pitch)
         pitch_proj = pitch_proj.transpose(1, 2)
-        x = x + pitch_proj
 
         for i in range(x.size(0)):
+            x[i, mel_lens[i]:, :] = x[i, mel_lens[i]:, :] + pitch_proj[i, mel_lens[i], :]
             x[i, mel_lens[i]:, :] = 0
         x, _ = self.lstm(x)
 
@@ -182,6 +182,7 @@ class ForwardTacotron(nn.Module):
 
         x_post = self.pad(x_post, mel.size(2))
         x = self.pad(x, mel.size(2))
+        pitch_hat = self.pad(pitch_hat, mel.size(2), value=0.0)
         return x, x_post, dur_hat, pitch_hat
 
     def generate(self, x, alpha=1.0, amplification=1.0):
@@ -198,11 +199,15 @@ class ForwardTacotron(nn.Module):
 
         x = self.lr(x, dur)
 
-        pitch_hat = self.pitch_pred(x).transpose(1, 2) * amplification
-        pitch_hat_proj = self.pitch_proj(pitch_hat).transpose(1, 2)
-        x = x + pitch_hat_proj
+        pitch_hat = self.pitch_pred(x).transpose(1, 2)
+        pitch_hat = pitch_hat.unsqueeze(1)
+        pitch_proj = self.pitch_proj(pitch_hat)
+        pitch_proj = pitch_proj.transpose(1, 2)
+
+        x = x + pitch_proj
 
         x, _ = self.lstm(x)
+
         x = F.dropout(x,
                       p=self.dropout,
                       training=self.training)
@@ -220,9 +225,9 @@ class ForwardTacotron(nn.Module):
 
         return x, x_post, dur, pitch_hat
 
-    def pad(self, x, max_len):
+    def pad(self, x, max_len, value=-11.5129):
         x = x[:, :, :max_len]
-        x = F.pad(x, [0, max_len - x.size(2), 0, 0], 'constant', -11.5129)
+        x = F.pad(x, [0, max_len - x.size(2), 0, 0], 'constant', value)
         return x
 
     def get_step(self):
