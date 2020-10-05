@@ -200,7 +200,6 @@ class ForwardTacotron(nn.Module):
         x = self.lr(x, dur)
 
         pitch_hat = self.pitch_pred(x).transpose(1, 2)
-        pitch_hat = pitch_hat.unsqueeze(1)
         pitch_proj = self.pitch_proj(pitch_hat)
         pitch_proj = pitch_proj.transpose(1, 2)
 
