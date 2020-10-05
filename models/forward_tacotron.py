@@ -70,11 +70,8 @@ class PitchPredictor(nn.Module):
         super().__init__()
         self.convs = torch.nn.ModuleList([
             BatchNormConv(in_dims, conv_dims, 5, activation=torch.relu),
-            BatchNormConv(conv_dims, conv_dims, 5, activation=torch.relu),
-            BatchNormConv(conv_dims, conv_dims, 5, activation=torch.relu),
         ])
-        self.rnn = nn.GRU(conv_dims, rnn_dims, batch_first=True, bidirectional=True)
-        self.lin = nn.Linear(2 * rnn_dims, 1)
+        self.lin = nn.Linear(conv_dims, 1)
         self.dropout = dropout
 
     def forward(self, x):
@@ -83,7 +80,6 @@ class PitchPredictor(nn.Module):
             x = conv(x)
             x = F.dropout(x, p=self.dropout, training=self.training)
         x = x.transpose(1, 2)
-        x, _ = self.rnn(x)
         x = self.lin(x)
         return x
 
@@ -128,7 +124,7 @@ class ForwardTacotron(nn.Module):
                                           conv_dims=durpred_conv_dims,
                                           rnn_dims=durpred_rnn_dims,
                                           dropout=durpred_dropout)
-        self.pitch_pred = PitchPredictor(embed_dims,
+        self.pitch_pred = PitchPredictor(prenet_dims,
                                          conv_dims=256,
                                          rnn_dims=128,
                                          dropout=0.5)
@@ -158,17 +154,17 @@ class ForwardTacotron(nn.Module):
 
         x = self.embedding(x)
         dur_hat = self.dur_pred(x).squeeze()
-        pitch_hat = self.pitch_pred(x).transpose(1, 2)
-
-        pitch = pitch.unsqueeze(1)
-        pitch_proj = self.pitch_proj(pitch)
-        pitch_proj = pitch_proj.transpose(1, 2)
 
         x = x.transpose(1, 2)
         x = self.prenet(x)
-        x = x + pitch_proj
 
         x = self.lr(x, dur)
+
+        pitch_hat = self.pitch_pred(x).transpose(1, 2)
+        pitch = pitch.unsqueeze(1)
+        pitch_proj = self.pitch_proj(pitch)
+        pitch_proj = pitch_proj.transpose(1, 2)
+        x = x + pitch_proj
 
         for i in range(x.size(0)):
             x[i, mel_lens[i]:, :] = 0
@@ -196,16 +192,16 @@ class ForwardTacotron(nn.Module):
         x = self.embedding(x)
         dur = self.dur_pred(x, alpha=alpha)
         dur = dur.squeeze(2)
-        pitch_hat = self.pitch_pred(x).transpose(1, 2) * amplification
-        #pitch_hat[:, :, -10:] -= torch.tensor(np.arange(10)*0.2)
-        #print(pitch_hat[:, :, -10:])
-        pitch_hat_proj = self.pitch_proj(pitch_hat).transpose(1, 2)
 
         x = x.transpose(1, 2)
         x = self.prenet(x)
-        x = x + pitch_hat_proj
 
         x = self.lr(x, dur)
+
+        pitch_hat = self.pitch_pred(x).transpose(1, 2) * amplification
+        pitch_hat_proj = self.pitch_proj(pitch_hat).transpose(1, 2)
+        x = x + pitch_hat_proj
+
         x, _ = self.lstm(x)
         x = F.dropout(x,
                       p=self.dropout,

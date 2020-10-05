@@ -50,18 +50,20 @@ if __name__ == '__main__':
     for prog_idx, (item_id, mel_len) in enumerate(all_data, 1):
         dur = np.load(paths.alg / f'{item_id}.npy')
         pitch = np.load(paths.raw_pitch / f'{item_id}.npy')
-        durs_cum = np.cumsum(np.pad(dur, (1, 0)))
+        #durs_cum = np.cumsum(np.pad(dur, (1, 0)))
 
-        pitch_char = np.zeros((dur.shape[0],), dtype=np.float)
-        for idx, a, b in zip(range(mel_len), durs_cum[:-1], durs_cum[1:]):
-            values = pitch[a:b][np.where(pitch[a:b] != 0.0)[0]]
-            values = values[np.where(values < MAX_FREQ)[0]]
-            pitch_char[idx] = np.mean(values) if len(values) > 0 else 0.0
+        #pitch_char = np.zeros((dur.shape[0],), dtype=np.float)
+        #for idx, a, b in zip(range(mel_len), durs_cum[:-1], durs_cum[1:]):
+        #    values = pitch[a:b][np.where(pitch[a:b] != 0.0)[0]]
+        #    values = values[np.where(values < MAX_FREQ)[0]]
+        #    pitch_char[idx] = np.mean(values) if len(values) > 0 else 0.0
         #print(f'{item_id} {pitch_char}')
         #print(f'{item_id} {text_dict[item_id]} {dur} {pitch_char}')
-        phoneme_pitches.append((item_id, pitch_char))
+        pitch = pitch[np.where(pitch < MAX_FREQ)[0]]
+        phoneme_pitches.append((item_id, pitch))
         bar = progbar(prog_idx, len(all_data))
         message = f'{bar} {prog_idx}/{len(all_data)} '
+        #print(pitch)
         stream(message)
 
     mean, std = normalize(phoneme_pitches)
